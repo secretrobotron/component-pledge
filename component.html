@@ -1,7 +1,8 @@
-<polymer-element name="ceci-email" attributes="data email server" extends="ceci-element">
+<polymer-element name="ceci-email" attributes="data email server" server="//localhost:8888/send" extends="ceci-element">
   <template>
     <link rel="stylesheet" href="component.css"></link>
     <input type="text" id="email" />
+    <div id="status">{{status}}</div>
     <div>Data:</div>
     <ul>
       <template id="dataCollection" repeat="{{d in allData}}">
@@ -57,19 +58,35 @@
   <script>
     Polymer('ceci-email', {
       ready: function () {
+        var that = this;
         this.super();
         this.allData = [];
+        this.status = '';
+        this.$.email.onchange = function (e) {
+          that.email = this.value;
+        };
       },
       send: function () {
+        var that = this;
+        if (!this.email) {
+          this.status = 'Enter a valid email!';
+          return;
+        }
         var xhr = new XMLHttpRequest();
+        var data = JSON.stringify(this.allData);
         xhr.open('POST', this.server, true);
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhr.onreadystatechange = function (e) {
+          that.status = 'Sending...';
+        };
         xhr.onerror = function (e) {
-          console.log('error');
+          console.error('error', xhr.statusText, e);
+          that.status = 'Error! Try again soon!';
         };
         xhr.onload = function (e) {
-          console.log('load');
+          that.status = 'Sent!';
         };
-        xhr.send(JSON.stringify(this._data));
+        xhr.send('email=' + encodeURIComponent(encodeURIComponent(this.email)) + '&items=' + data);
       },
       addData: function (value) {
         this.allData.push(value);
