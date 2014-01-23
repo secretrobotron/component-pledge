@@ -1,0 +1,82 @@
+<polymer-element name="ceci-email" attributes="data email server" extends="ceci-element">
+  <template>
+    <link rel="stylesheet" href="component.css"></link>
+    <input type="text" id="email" />
+    <div>Data:</div>
+    <ul>
+      <template id="dataCollection" repeat="{{d in allData}}">
+        <li>{{d}}</li>
+      </template>
+    </ul>
+    <shadow></shadow>
+    <script type="text/json" id="ceci-definition">
+      {
+        "tags": ["email", "data"],
+        "thumbnail": "./thumbnail.png",
+        "name": "Email",
+        "broadcasts": {
+          "emailChanged": {
+            "label": "Email Changed",
+            "description": "Occurs when email address changed."
+          }
+        },
+        "listeners": {
+          "send": {
+            "description": "Sends email.",
+            "label": "Send Email",
+            "default": "green"
+          },
+          "clearData": {
+            "description": "Clears the data collection.",
+            "label": "Clear Data"
+          },
+          "addData": {
+            "label": "Add Data",
+            "description": "Adds data to be sent in an email.",
+            "editable": "text",
+            "default": "red"
+          }
+        },
+        "attributes": {
+          "email": {
+            "label": "Email Address",
+            "description": "Recipient's email address",
+            "editable": "text",
+            "listener": true,
+            "defaultListener": "yellow"
+          },
+          "server": {
+            "label": "Mail Server",
+            "description": "URL to server to which email will be POSTed.",
+            "editable": "text"
+          }
+        }
+      }
+    </script>
+  </template>
+  <script>
+    Polymer('ceci-email', {
+      ready: function () {
+        this.super();
+        this.allData = [];
+      },
+      send: function () {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', this.server, true);
+        xhr.onerror = function (e) {
+          console.log('error');
+        };
+        xhr.onload = function (e) {
+          console.log('load');
+        };
+        xhr.send(JSON.stringify(this._data));
+      },
+      addData: function (value) {
+        this.allData.push(value);
+      },
+      clearData: function () {
+        this.allData = [];
+      }
+    });
+  </script>
+</polymer-element>

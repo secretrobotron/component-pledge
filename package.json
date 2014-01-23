@@ -1,0 +1,31 @@
+{
+  "name": "email",
+  "author": {
+    "name": "secretrobotron",
+    "email": "secretrobotron@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/secretrobotron/component-email.git"
+  },
+  "licenses": [
+    {
+      "type": "MPL-2.0",
+      "url": "undefined/blob/master/LICENSE-MPL-2.0"
+    }
+  ],
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.6.3",
+    "grunt-contrib-csslint": "~0.1.2",
+    "grunt-lint-inline": "~0.3.2",
+    "open": "0.0.4",
+    "grunt-contrib-connect": "~0.5.0",
+    "grunt-open": "~0.2.2",
+    "grunt-contrib-watch": "~0.5.3"
+  },
+  "keywords": [],
+  "dependencies": {
+    "express": "~3.4.8"
+  }
+}
