@@ -137,7 +137,7 @@
         this.super();
         this.status = '';
         try {
-          this._pledges = JSON.parse(sessionStorage.getItem(this.getUUID()));
+          this._pledges = JSON.parse(sessionStorage.getItem(this.getUUID())) || [];
         }
         catch (e) {
           this._pledges = [];
