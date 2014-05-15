@@ -1,4 +1,4 @@
-<polymer-element name="ceci-pledge" attributes="readonly pledge email server" extends="ceci-element">
+<polymer-element name="ceci-pledge" attributes="readonly pledge email mode" extends="ceci-element">
   <ceci-definition>
     {
       "tags": ["email", "pledge"],
@@ -13,20 +13,28 @@
           "label": "Pledge Submitted",
           "description": "Occurs when pledge submission has been successfully completed."
         },
-        "pledgeError": {
-          "label": "Pledge Error",
-          "description": "Occurs when pledge submission failed."
+        "modeChanged": {
+          "label": "View Mode Changed",
+          "description": "The view mode changed."
         }
       },
       "listeners": {
-        "send": {
-          "description": "Sends pledge.",
-          "label": "Send Pledge",
+        "submit": {
+          "description": "Submits pledge.",
+          "label": "Submit Pledge",
           "default": "green"
         },
         "clearPledge": {
           "description": "Clears the pledge data.",
           "label": "Clear Data"
+        },
+        "viewMode": {
+          "description": "Changes to View mode.",
+          "label": "Go to View Mode"
+        },
+        "submitMode": {
+          "description": "Change to Submit mode.",
+          "label": "Go to Submit mode"
         }
       },
       "attributes": {
@@ -36,7 +44,7 @@
           "editable": "boolean"
         },
         "pledge": {
-          "label": "Pledge",
+          "label": "Pledge Data",
           "description": "Pledge data to submit.",
           "editable": "text",
           "listener": "true",
@@ -49,10 +57,12 @@
           "listener": true,
           "defaultListener": "yellow"
         },
-        "server": {
-          "label": "Mail Server",
-          "description": "URL to server to which email will be POSTed.",
-          "editable": "text"
+        "mode": {
+          "label": "View Mode",
+          "description": "Decide whether component should show a submission form or a list view.",
+          "editable": "select",
+          "options": ["Submit", "View"],
+          "listener": true
         }
       }
     }
@@ -82,56 +92,92 @@
         display: inline-block;
         width: 100%;
       }
+
+      :host table {
+        width: 100%;
+      }
+
+      :host table tr td {
+        text-align: center;
+      }
+
+      :host table tr:nth-child(even) td {
+        background: #eee;
+      }
+
+      :host table tr:first-child td {
+        background: #bbb;
+      }
     </style>
-    <div id="status">{{status}}</div>
-    <div class="input-container">
-      <div>Email:</div>
-      <input type="text" id="email" readonly?="{{readonly == 'true'}}" value="{{email}}" placeholder="me@somewhere.fun"/></div>
-    <div class="input-container">
-      <div>Pledge:</div>
-      <input type="text" readonly?="{{readonly == 'true'}}" value="{{pledge}}" placeholder="One free introspection"></div>
+    <div hidden?="{{mode == 'Submit'}}">
+      <table>
+        <tr><td><strong>Email</strong></td><td><strong>Pledge</strong></td></tr>
+        <template repeat="{{p in _pledges}}">
+          <tr><td>{{p.email}}</td><td>{{p.pledge}}</td></tr>
+        </template>
+      </table>
+    </div>
+    <div hidden?="{{mode == 'View'}}">
+      <div id="status">{{status}}</div>
+      <div class="input-container">
+        <div>Email:</div>
+        <input type="email" name="email" readonly?="{{readonly == 'true'}}" value="{{email}}" placeholder="me@somewhere.fun"/></div>
+      <div class="input-container">
+        <div>Pledge:</div>
+        <input type="text" name="pledge" readonly?="{{readonly == 'true'}}" value="{{pledge}}" placeholder="One free introspection"></div>
+    </div>
     <shadow></shadow>
   </template>
   <script>
     Polymer('ceci-pledge', {
       readonly: 'false',
+      email: '',
       pledge: '',
-      server: 'http://component-pledge-server.herokuapp.com/send',
+      mode: 'Submit',
+      _pledges: null,
       ready: function () {
         this.super();
         this.status = '';
+        try {
+          this._pledges = JSON.parse(sessionStorage.getItem(this.getUUID()));
+        }
+        catch (e) {
+          this._pledges = [];
+        }
       },
-      send: function () {
-        var that = this;
+      getUUID: function () {
+        var uuid = 'pledge-storage-' + (document.querySelector('ceci-app').appid || 'temp-' + Math.round(Math.random() * 10000000000000000));
+        return uuid;
+      },
+      submit: function () {
+        var email = this.email.trim();
+        var pledge = this.pledge.trim();
 
-        if (!this.email.trim()) {
+        if (!email) {
           this.status = 'Email is missing!';
           return;
         }
-        if (!this.pledge.trim()) {
+        if (!pledge) {
           this.status = 'Pledge is missing!';
           return;
         }
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', this.server, true);
-        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xhr.onreadystatechange = function (e) {
-          that.status = 'Sending...';
-        };
-        xhr.onerror = function (e) {
-          console.error('error', xhr.statusText, e);
-          that.status = 'Error! Try again soon!';
-          that.broacast('pledgeError');
-        };
-        xhr.onload = function (e) {
-          that.status = 'Sent!';
-          that.broacast('pledgeSubmitted');
-        };
-        xhr.send('email=' + encodeURIComponent(encodeURIComponent(this.email)) + '&items=' + escape(pledge));
+        this._pledges.push({email: email, pledge: pledge});
+        this.email = '';
+        this.pledge = '';
+        sessionStorage.setItem(this.getUUID(), JSON.stringify(this._pledges));
+      },
+      modeChanged: function () {
+        this.broadcast('modeChanged', this.mode);
       },
       clearData: function () {
         this.pledge = '';
+      },
+      submitMode: function () {
+        this.mode = 'Submit';
+      },
+      viewMode: function () {
+        this.mode = 'View';
       }
     });
   </script>
