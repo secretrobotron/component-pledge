@@ -24,7 +24,7 @@
           "label": "Submit Pledge",
           "default": "green"
         },
-        "clearPledge": {
+        "clearPledges": {
           "description": "Clears the pledge data.",
           "label": "Clear Data"
         },
@@ -91,29 +91,43 @@
         width: 100%;
       }
 
-      :host table {
+      :host #pledge-list {
+        max-width: 100%;
         width: 100%;
+        display: block;
+        margin: 0;
+        padding: 0;
+        list-style: none;
       }
 
-      :host table tr td {
-        text-align: center;
+      :host #pledge-list .pledge-list-item {
+        overflow-wrap: break-word;
+        font-size: 1em;
+        padding: .85em .25em;
+        display: block;
       }
 
-      :host table tr:nth-child(even) td {
+      :host #pledge-list .pledge-list-item span {
+        font-size: .85em;
+      }
+
+      :host #pledge-list .pledge-list-item:nth-child(even) {
         background: #eee;
       }
 
-      :host table tr:first-child td {
+      :host #pledge-list-title {
         background: #bbb;
+        padding: .85em 0;
+        text-align: center;
       }
     </style>
     <div hidden?="{{mode == 'Submit'}}">
-      <table>
-        <tr><td><strong>Email</strong></td><td><strong>Pledge</strong></td></tr>
+      <div id="pledge-list-title"><strong>Pledges</strong></div>
+      <ul id="pledge-list">
         <template repeat="{{p in _pledges}}">
-          <tr><td>{{p.email}}</td><td>{{p.pledge}}</td></tr>
+          <li class="pledge-list-item"><strong>{{p.email}}</strong><br/><span>{{p.pledge}}</span></li>
         </template>
-      </table>
+      </ul>
     </div>
     <div hidden?="{{mode == 'View'}}">
       <div id="status">{{status}}</div>
@@ -127,56 +141,85 @@
     <shadow></shadow>
   </template>
   <script>
-    Polymer('ceci-pledge', {
-      readonly: 'false',
-      email: '',
-      pledge: '',
-      mode: 'Submit',
-      _pledges: null,
-      ready: function () {
-        this.super();
-        this.status = '';
-        try {
-          this._pledges = JSON.parse(sessionStorage.getItem(this.getUUID())) || [];
-        }
-        catch (e) {
-          this._pledges = [];
-        }
-      },
-      getUUID: function () {
-        var uuid = 'pledge-storage-' + (document.querySelector('ceci-app').appid || 'temp-' + Math.round(Math.random() * 10000000000000000));
-        return uuid;
-      },
-      submit: function () {
-        var email = this.email.trim();
-        var pledge = this.pledge.trim();
+    (function () {
+      var _storageUpdaters = [];
 
-        if (!email) {
-          this.status = 'Email is missing!';
-          return;
-        }
-        if (!pledge) {
-          this.status = 'Pledge is missing!';
-          return;
-        }
+      function registerStorageUpdater (element, callback) {
+        _storageUpdaters.push(function (caller) {
+          if (element !== caller) {
+            callback();
+          }
+        });
 
-        this._pledges.push({email: email, pledge: pledge});
-        this.email = '';
-        this.pledge = '';
-        sessionStorage.setItem(this.getUUID(), JSON.stringify(this._pledges));
-      },
-      modeChanged: function () {
-        this.broadcast('modeChanged', this.mode);
-      },
-      clearData: function () {
-        this.pledge = '';
-      },
-      submitMode: function () {
-        this.mode = 'Submit';
-      },
-      viewMode: function () {
-        this.mode = 'View';
+        return function () {
+          _storageUpdaters.forEach(function (c) {
+            c.call(this);
+          }.bind(this));
+        };
       }
-    });
+
+      Polymer('ceci-pledge', {
+        readonly: 'false',
+        email: '',
+        pledge: '',
+        mode: 'Submit',
+        _pledges: null,
+        ready: function () {
+          this.super();
+          this.status = '';
+          this._storageUpdater = registerStorageUpdater(this, function () {
+            this.loadPledges();
+          }.bind(this));
+          this.loadPledges();
+        },
+        loadPledges: function () {
+          try {
+            this._pledges = JSON.parse(localStorage.getItem(this.getUUID())) || [];
+          }
+          catch (e) {
+            this._pledges = [];
+          }
+        },
+        getUUID: function () {
+          var uuid = 'pledge-storage-' + (document.querySelector('ceci-app').appid || 'temp-' + Math.round(Math.random() * 10000000000000000));
+          return uuid;
+        },
+        submit: function () {
+          var email = this.email.trim();
+          var pledge = this.pledge.trim();
+
+          if (!email) {
+            this.status = 'Email is missing!';
+            return;
+          }
+          if (!pledge) {
+            this.status = 'Pledge is missing!';
+            return;
+          }
+
+          this.status = '';
+
+          this._pledges.push({email: email, pledge: pledge});
+          this.email = '';
+          this.pledge = '';
+          localStorage.setItem(this.getUUID(), JSON.stringify(this._pledges));
+          this._storageUpdater();
+        },
+        modeChanged: function () {
+          this.broadcast('modeChanged', this.mode);
+        },
+        clearPledges: function () {
+          localStorage.setItem(this.getUUID(), JSON.stringify([]));
+          this.loadPledges();
+          this._storageUpdater();
+        },
+        submitMode: function () {
+          this.mode = 'Submit';
+        },
+        viewMode: function () {
+          this.mode = 'View';
+        }
+      });
+    })();
   </script>
 </polymer-element>
