@@ -1,33 +1,47 @@
-<polymer-element name="ceci-email" attributes="data email server" server="http://component-email-server.herokuapp.com/send" extends="ceci-element">
+<polymer-element name="ceci-pledge" attributes="readonly pledge email server" extends="ceci-element">
   <ceci-definition>
     {
-      "tags": ["email", "data"],
+      "tags": ["email", "pledge"],
       "thumbnail": "./thumbnail.png",
-      "name": "Email",
+      "name": "Pledge",
       "broadcasts": {
         "emailChanged": {
           "label": "Email Changed",
           "description": "Occurs when email address changed."
+        },
+        "pledgeSubmitted": {
+          "label": "Pledge Submitted",
+          "description": "Occurs when pledge submission has been successfully completed."
+        },
+        "pledgeError": {
+          "label": "Pledge Error",
+          "description": "Occurs when pledge submission failed."
         }
       },
       "listeners": {
         "send": {
-          "description": "Sends email.",
-          "label": "Send Email",
+          "description": "Sends pledge.",
+          "label": "Send Pledge",
           "default": "green"
         },
-        "clearData": {
-          "description": "Clears the data collection.",
+        "clearPledge": {
+          "description": "Clears the pledge data.",
           "label": "Clear Data"
-        },
-        "addData": {
-          "label": "Add Data",
-          "description": "Adds data to be sent in an email.",
-          "editable": "text",
-          "default": "red"
         }
       },
       "attributes": {
+        "readonly": {
+          "label": "Read-Only",
+          "description": "Disables editing pledge and email from UI.",
+          "editable": "boolean"
+        },
+        "pledge": {
+          "label": "Pledge",
+          "description": "Pledge data to submit.",
+          "editable": "text",
+          "listener": "true",
+          "defaultListener": "orange"
+        },
         "email": {
           "label": "Email Address",
           "description": "Recipient's email address",
@@ -44,36 +58,62 @@
     }
   </ceci-definition>
   <template>
-    <link rel="stylesheet" href="component.css"></link>
-    <input type="text" id="email" />
+    <style>
+      :host {
+        display: block;
+        min-height: 50px;
+        width: 100%;
+        font-family: sans-serif;
+        font-size: 12pt;
+        background: white;
+        padding: 1em 0;
+      }
+
+      :host .input-container {
+        margin-top: .5em;
+        margin-bottom: .5em;
+        margin-left: 1em;
+        margin-right: 2em;
+      }
+
+      :host input {
+        font-family: sans-serif;
+        font-size: 1em;
+        display: inline-block;
+        width: 100%;
+      }
+    </style>
     <div id="status">{{status}}</div>
-    <div>Data:</div>
-    <ul>
-      <template id="dataCollection" repeat="{{d in allData}}">
-        <li>{{d}}</li>
-      </template>
-    </ul>
+    <div class="input-container">
+      <div>Email:</div>
+      <input type="text" id="email" readonly?="{{readonly == 'true'}}" value="{{email}}" placeholder="me@somewhere.fun"/></div>
+    <div class="input-container">
+      <div>Pledge:</div>
+      <input type="text" readonly?="{{readonly == 'true'}}" value="{{pledge}}" placeholder="One free introspection"></div>
     <shadow></shadow>
   </template>
   <script>
-    Polymer('ceci-email', {
+    Polymer('ceci-pledge', {
+      readonly: 'false',
+      pledge: '',
+      server: 'http://component-pledge-server.herokuapp.com/send',
       ready: function () {
-        var that = this;
         this.super();
-        this.allData = [];
         this.status = '';
-        this.$.email.onchange = function (e) {
-          that.email = this.value;
-        };
       },
       send: function () {
         var that = this;
-        if (!this.email) {
-          this.status = 'Enter a valid email!';
+
+        if (!this.email.trim()) {
+          this.status = 'Email is missing!';
           return;
         }
+        if (!this.pledge.trim()) {
+          this.status = 'Pledge is missing!';
+          return;
+        }
+
         var xhr = new XMLHttpRequest();
-        var data = JSON.stringify(this.allData);
         xhr.open('POST', this.server, true);
         xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xhr.onreadystatechange = function (e) {
@@ -82,17 +122,16 @@
         xhr.onerror = function (e) {
           console.error('error', xhr.statusText, e);
           that.status = 'Error! Try again soon!';
+          that.broacast('pledgeError');
         };
         xhr.onload = function (e) {
           that.status = 'Sent!';
+          that.broacast('pledgeSubmitted');
         };
-        xhr.send('email=' + encodeURIComponent(encodeURIComponent(this.email)) + '&items=' + data);
-      },
-      addData: function (value) {
-        this.allData.push(value);
+        xhr.send('email=' + encodeURIComponent(encodeURIComponent(this.email)) + '&items=' + escape(pledge));
       },
       clearData: function () {
-        this.allData = [];
+        this.pledge = '';
       }
     });
   </script>
