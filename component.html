@@ -1,4 +1,48 @@
 <polymer-element name="ceci-email" attributes="data email server" server="http://component-email-server.herokuapp.com/send" extends="ceci-element">
+  <ceci-definition>
+    {
+      "tags": ["email", "data"],
+      "thumbnail": "./thumbnail.png",
+      "name": "Email",
+      "broadcasts": {
+        "emailChanged": {
+          "label": "Email Changed",
+          "description": "Occurs when email address changed."
+        }
+      },
+      "listeners": {
+        "send": {
+          "description": "Sends email.",
+          "label": "Send Email",
+          "default": "green"
+        },
+        "clearData": {
+          "description": "Clears the data collection.",
+          "label": "Clear Data"
+        },
+        "addData": {
+          "label": "Add Data",
+          "description": "Adds data to be sent in an email.",
+          "editable": "text",
+          "default": "red"
+        }
+      },
+      "attributes": {
+        "email": {
+          "label": "Email Address",
+          "description": "Recipient's email address",
+          "editable": "text",
+          "listener": true,
+          "defaultListener": "yellow"
+        },
+        "server": {
+          "label": "Mail Server",
+          "description": "URL to server to which email will be POSTed.",
+          "editable": "text"
+        }
+      }
+    }
+  </ceci-definition>
   <template>
     <link rel="stylesheet" href="component.css"></link>
     <input type="text" id="email" />
@@ -10,50 +54,6 @@
       </template>
     </ul>
     <shadow></shadow>
-    <script type="text/json" id="ceci-definition">
-      {
-        "tags": ["email", "data"],
-        "thumbnail": "./thumbnail.png",
-        "name": "Email",
-        "broadcasts": {
-          "emailChanged": {
-            "label": "Email Changed",
-            "description": "Occurs when email address changed."
-          }
-        },
-        "listeners": {
-          "send": {
-            "description": "Sends email.",
-            "label": "Send Email",
-            "default": "green"
-          },
-          "clearData": {
-            "description": "Clears the data collection.",
-            "label": "Clear Data"
-          },
-          "addData": {
-            "label": "Add Data",
-            "description": "Adds data to be sent in an email.",
-            "editable": "text",
-            "default": "red"
-          }
-        },
-        "attributes": {
-          "email": {
-            "label": "Email Address",
-            "description": "Recipient's email address",
-            "editable": "text",
-            "listener": true,
-            "defaultListener": "yellow"
-          },
-          "server": {
-            "label": "Mail Server",
-            "description": "URL to server to which email will be POSTed.",
-            "editable": "text"
-          }
-        }
-      }
-    </script>
   </template>
   <script>
     Polymer('ceci-email', {
